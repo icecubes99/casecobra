@@ -1,6 +1,209 @@
-const DesignConfigurator = () => {
+"use client"
+import HandleComponent from "@/components/HandleComponent";
+import { cn, formatPrice } from "@/lib/utils";
+import { AspectRatio } from "@radix-ui/react-aspect-ratio";
+import { ScrollArea } from "@radix-ui/react-scroll-area";
+import NextImage from 'next/image'
+import { Rnd } from "react-rnd"
+import { RadioGroup } from '@headlessui/react'
+import { useState } from "react";
+import { COLORS, FINISHES, MATERIALS, MODELS } from "@/validators/option-validators";
+import { Label } from "@radix-ui/react-label";
+import { DropdownMenu } from "@/components/ui/dropdown-menu";
+import { DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@radix-ui/react-dropdown-menu";
+import { Button } from "@/components/ui/button";
+import { Check, ChevronsUpDown } from "lucide-react";
 
-    return <div></div>
+// bg-blue-950 border-blue-950
+// bg-zinc-900 border-zinc-900
+// bg-rose-950 border-rose-950
+interface DesignConfiguratorProps {
+    configId: string
+    imageUrl: string
+    imageDimensions: { width: number; height: number }
+}
+
+const DesignConfigurator = ({
+    configId,
+    imageUrl,
+    imageDimensions
+}: DesignConfiguratorProps) => {
+
+    const [options, setOptions] = useState<{
+        color: (typeof COLORS)[number]
+        model: (typeof MODELS.options)[number]
+        material: (typeof MATERIALS.options)[number]
+        finish: (typeof FINISHES.options)[number]
+    }>({
+        color: COLORS[0],
+        model: MODELS.options[0],
+        material: MATERIALS.options[0],
+        finish: FINISHES.options[0]
+    })
+
+
+    return <div className='relative mt-20 grid grid-cols-1 lg:grid-cols-3 mb-20 pb-20'>
+        <div className="relative h-[37.5rem] overflow-hidden col-span-2 w-full max-w-4xl flex items-center justify-center rounded-lg border-2 border-dashed border-gray-300 p-12 text-center focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2">
+            <div className="relative w-60 bg-opacity-50 pointer-events-none aspect-[896/1831]">
+                {/* The purpose of adding this aspect ratio is so that the phone model in the site would stick to that aspect ratio no matter the size of the screen */}
+                <AspectRatio ratio={896 / 1831} className="pointer-events-none relative z-50 aspect-[896/1831] w-full">
+                    <NextImage alt="phone image" src='/phone-template.png' className="pointer-events-none z-50 select-none" fill />
+                </AspectRatio>
+                {/* The purpose of this div is to add a gray background in the container of the phone */}
+                <div className='absolute z-40 inset-0 left-[3px] top-px right-[3px] bottom-px rounded-[32px] shadow-[0_0_0_99999px_rgba(229,231,235,0.6)]' />
+                {/* The purpose of this is to have the color of the case of the iphone and the user has the ability to change the color using the dynamic bg in the classname */}
+                <div className={cn(
+                    "absolute inset-0 left-[3px] top-px right-[3px] bottom-px rounded-[32px]",
+                    `bg-${options.color.tw}`
+                )} />
+            </div>
+            {/* The purpose of the Rnd is so that we can drag the image that the user has provided anywhere in the grid */}
+            <Rnd default={
+                {
+                    x: 150,
+                    y: 205,
+                    height: imageDimensions.height / 4,
+                    width: imageDimensions.width / 4
+                }
+            }
+                className="absolute z-20 border-[3px] border-primary"
+                // The purpose of lockAspectRatio is that the image stays the same aspectratio when the user resizes it
+                //resizedHandleComponent is added so that each corner of the image has this HandleComponent which makes it easier for the users to see that you can resize the image
+                lockAspectRatio
+                resizeHandleComponent={{
+                    bottomRight: <HandleComponent />,
+                    bottomLeft: <HandleComponent />,
+                    topRight: <HandleComponent />,
+                    topLeft: <HandleComponent />,
+
+                }}>
+                <div className="relative w-full h-full">
+                    {/* Nextjs would throw in an error the first time when plugging in the source as the imageUrl is from another site, we need to white list it in our next.config.mjs so that it would come thru */}
+                    <NextImage src={imageUrl} fill alt="your image" className="pointer-events-none" />
+                </div>
+            </Rnd>
+        </div>
+
+        <div className="h-[37.5rem] flex flex-col bg-white">
+            {/* Purpose of scrollarea is that the scroll area for the model finish and material radio choices for the user is contained in the wrapper and not overflowing thru out the page*/}
+            <ScrollArea className="relative flex-1 overflow-auto">
+                <div aria-hidden="true" className="absolute z-10 inset-x-0 bottom-0 h-12 bg-gradient-to-t from-white pointer-events-none" />
+                <div className="px-8 pb-12 pt-8">
+                    <h2 className="tracking-tight font-bold text-3xl">Customize your Case</h2>
+
+                    <div className="w-full h-px bg-zinc-200 my-6" />
+
+                    <div className="relative mt-4 h-full flex flex-col justify-between">
+                        <div className="flex flex-col gap-6">
+                            {/* The radiogroup used for this part is from headlessui and not from shadcn as according to the tutorial, it looks kinda shit */}
+                            <RadioGroup value={options.color} onChange={(val) => {
+                                setOptions((prev) => ({
+                                    ...prev,
+                                    color: val,
+                                }))
+                            }}>
+                                <Label>Color: {options.color.label}</Label>
+                                <div className='mt-3 flex items-center space-x-3'>
+                                    {/* This maps over the COLORS in which for every color in the options, it creates a radiogroup option  */}
+                                    {COLORS.map((color) => (
+                                        <RadioGroup.Option
+                                            key={color.label}
+                                            value={color}
+                                            className={({ active, checked }) =>
+                                                cn(
+                                                    'relative -m-0.5 flex cursor-pointer items-center justify-center rounded-full p-0.5 active:ring-0 focus:ring-0 active:outline-none focus:outline-none border-2 border-transparent',
+                                                    {
+                                                        [`border-${color.tw}`]: active || checked,
+                                                    }
+                                                )
+                                            }>
+                                            <span
+                                                className={cn(
+                                                    `bg-${color.tw}`,
+                                                    'h-8 w-8 rounded-full border border-black border-opacity-10'
+                                                )}
+                                            />
+                                        </RadioGroup.Option>
+                                    ))}
+                                </div>
+                            </RadioGroup>
+
+                            <div className="relative flex flex-col gap-3 w-full">
+                                <Label>Model</Label>
+                                <DropdownMenu>
+                                    {/* The purpose of the asChild parameter is so that the dropdown component wont load its own button but chooses the button that we have provided in its child */}
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="outline" role="combobox" className="w-full justify-between">{options.model.label}
+                                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent>
+                                        {MODELS.options.map((model) => (
+                                            <DropdownMenuItem key={model.label} className={cn("flex text-sm gap-1 items-center p-1.5 cursor-default hover:bg-zinc-100", {
+                                                'bg-zinc-100': model.label === options.model.label
+                                            })}
+                                                onClick={() => {
+                                                    setOptions((prev) => ({ ...prev, model }))
+                                                }}>
+                                                <Check className={cn("mr-2 h-4 w-4", model.label === options.model.label ? 'opacity-100' : "opacity-0")} />
+                                                {model.label}</DropdownMenuItem>
+                                        ))}
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            </div>
+
+                            {[MATERIALS, FINISHES].map(({ name, options: selectableOptions }) => (
+                                <RadioGroup key={name} value={options[name]} onChange={(val) => {
+                                    setOptions((prev) => ({
+                                        ...prev,
+                                        //name: material or finish
+                                        [name]: val,
+                                    }))
+                                }}>
+                                    <Label>
+                                        {name.slice(0, 1).toUpperCase() + name.slice(1)}
+                                    </Label>
+                                    <div className="mt-3 space-y-4">
+                                        {selectableOptions.map((option) => (
+                                            <RadioGroup.Option
+                                                key={option.value}
+                                                value={option}
+                                                className={({ active, checked }) =>
+                                                    cn("ring-yellow-200ative block cursor-pointer rounded-lg bg-white px-6 py-4 shadow-sm border-2 border-zinc-200 focus:outline-none ring-0 focus:ring-0 outline-none sm:flex sm:justify-between", {
+                                                        "border-primary": active || checked,
+                                                    })}
+                                            >
+                                                <span className="flex items-center">
+                                                    <span className="flex flex-col text-sm">
+                                                        <RadioGroup.Label className="font-medium text-gray-900" as="span">
+                                                            {option.label}
+                                                        </RadioGroup.Label>
+                                                        {option.description ? <RadioGroup.Description as="span" className="text-gray-500">
+                                                            <span className="block sm:inline">{option.description}</span>
+                                                        </RadioGroup.Description> : null}
+                                                    </span>
+                                                </span>
+                                                <RadioGroup.Description as="span" className="mt-2 flex text-sm sm:ml-4 sm:mt-0 sm:flex-col sm:text-right">
+                                                    <span className=" font-medium text-gray-900">
+                                                        {formatPrice(option.price / 100)}
+                                                    </span>
+                                                </RadioGroup.Description>
+                                            </RadioGroup.Option>
+                                        ))}
+                                    </div>
+                                </RadioGroup>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+
+            </ScrollArea>
+
+            <div className="w-full px-8 h-16 bg-white">
+                <div className="h-px w-full bg-zinc-200"></div>
+            </div>
+        </div >
+    </div >
 }
 
 export default DesignConfigurator

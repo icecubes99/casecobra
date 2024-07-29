@@ -26,7 +26,7 @@ const Page = async ({ searchParams }: PageProps) => {
     const { imageUrl, width, height } = configuration
 
     //We need to put the main logic of this page in another component as this is a server component and server components is only rendered once on the server while the main logic uses react hooks like useState and useEffect which needs to be rerendered as it interacts with the user
-    return <DesignConfigurator />
+    return <DesignConfigurator configId={configuration.id} imageUrl={imageUrl} imageDimensions={{ width, height }} />
 
 }
 
